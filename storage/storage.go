@@ -1806,7 +1806,7 @@ func (c *Conditions) isMetagenerationValid() bool {
 func applyConds(method string, gen int64, conds *Conditions, call interface{}) error {
 	cval := reflect.ValueOf(call)
 	if gen >= 0 {
-		if !setConditionField(cval, "Generation", gen) {
+		if !setConditionField(cval.MethodByName("Generation"), gen) {
 			return fmt.Errorf("storage: %s: generation not supported", method)
 		}
 	}
@@ -1818,25 +1818,25 @@ func applyConds(method string, gen int64, conds *Conditions, call interface{}) e
 	}
 	switch {
 	case conds.GenerationMatch != 0:
-		if !setConditionField(cval, "IfGenerationMatch", conds.GenerationMatch) {
+		if !setConditionField(cval.MethodByName("IfGenerationMatch"), conds.GenerationMatch) {
 			return fmt.Errorf("storage: %s: ifGenerationMatch not supported", method)
 		}
 	case conds.GenerationNotMatch != 0:
-		if !setConditionField(cval, "IfGenerationNotMatch", conds.GenerationNotMatch) {
+		if !setConditionField(cval.MethodByName("IfGenerationNotMatch"), conds.GenerationNotMatch) {
 			return fmt.Errorf("storage: %s: ifGenerationNotMatch not supported", method)
 		}
 	case conds.DoesNotExist:
-		if !setConditionField(cval, "IfGenerationMatch", int64(0)) {
+		if !setConditionField(cval.MethodByName("IfGenerationMatch"), int64(0)) {
 			return fmt.Errorf("storage: %s: DoesNotExist not supported", method)
 		}
 	}
 	switch {
 	case conds.MetagenerationMatch != 0:
-		if !setConditionField(cval, "IfMetagenerationMatch", conds.MetagenerationMatch) {
+		if !setConditionField(cval.MethodByName("IfMetagenerationMatch"), conds.MetagenerationMatch) {
 			return fmt.Errorf("storage: %s: ifMetagenerationMatch not supported", method)
 		}
 	case conds.MetagenerationNotMatch != 0:
-		if !setConditionField(cval, "IfMetagenerationNotMatch", conds.MetagenerationNotMatch) {
+		if !setConditionField(cval.MethodByName("IfMetagenerationNotMatch"), conds.MetagenerationNotMatch) {
 			return fmt.Errorf("storage: %s: ifMetagenerationNotMatch not supported", method)
 		}
 	}
@@ -1900,12 +1900,11 @@ func applySourceCondsProto(gen int64, conds *Conditions, call *storagepb.Rewrite
 // setConditionField sets a field on a *raw.WhateverCall.
 // We can't use anonymous interfaces because the return type is
 // different, since the field setters are builders.
-func setConditionField(call reflect.Value, name string, value interface{}) bool {
-	m := call.MethodByName(name)
-	if !m.IsValid() {
+func setConditionField(method reflect.Value, value interface{}) bool {
+	if !method.IsValid() {
 		return false
 	}
-	m.Call([]reflect.Value{reflect.ValueOf(value)})
+	method.Call([]reflect.Value{reflect.ValueOf(value)})
 	return true
 }
 
